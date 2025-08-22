@@ -1,1 +1,354 @@
-hi
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Travel Diary - Your Travel Guide</title>
+
+  <!-- Leaflet and Chart.js CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+
+    header {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      font-size: 1.2rem;
+      color: #ddd;
+    }
+
+    main {
+      padding: 2rem;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    .card {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      color: #ffde59;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    form input, form button {
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    form button {
+      background-color: #ffb703;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    ul li {
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 0.6rem 1rem;
+      margin: 0.5rem 0;
+      border-radius: 10px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background-color: rgba(0, 0, 0, 0.7);
+      font-size: 0.9rem;
+    }
+
+    #map-frame {
+      width: 100%;
+      height: 300px;
+      margin-bottom: 1rem;
+      border: 2px solid #fff;
+      border-radius: 10px;
+    }
+
+    .image-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    .image-gallery img {
+      width: 200px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="hero-text">
+      <h1>My Trip Diary</h1>
+      <p>Your Ultimate Travel Guide</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" id="trip-details">
+      <h2>📍 Trip Info</h2>
+      <form id="trip-form">
+        <input type="text" id="destination" placeholder="Destination" required />
+        <input type="date" id="start-date" required />
+        <input type="date" id="end-date" required />
+        <input type="number" id="budget" placeholder="Budget (₹)" required />
+        <button type="submit">Save Trip</button>
+      </form>
+    </section>
+
+    <section class="card" id="trip-summary">
+      <h2>📝 Saved Trip Summary</h2>
+      <div id="summary-output"></div>
+    </section>
+
+    <section class="card" id="itinerary-section">
+      <h2>📅 Daily Itinerary</h2>
+      <form id="itinerary-form">
+        <input type="text" id="day-name" placeholder="e.g., Day 1 - Arrival" required />
+        <input type="text" id="activity" placeholder="e.g., Check-in to hotel" required />
+        <button type="submit">Add</button>
+      </form>
+      <ul id="itinerary-list"></ul>
+    </section>
+
+    <section class="card" id="budget-section">
+      <h2>💸 Budget Tracker</h2>
+      <canvas id="expense-chart" width="400" height="200"></canvas>
+      <form id="expense-form">
+        <input type="text" id="expense-name" placeholder="Expense Name" required />
+        <input type="number" id="expense-amount" placeholder="Amount (₹)" required />
+        <button type="submit">Add</button>
+      </form>
+      <div id="budget-summary">
+        <p><strong>Total Budget:</strong> ₹<span id="total-budget">0</span></p>
+        <p><strong>Total Spent:</strong> ₹<span id="total-spent">0</span></p>
+        <p><strong>Remaining:</strong> ₹<span id="budget-remaining">0</span></p>
+      </div>
+      <ul id="expense-list"></ul>
+    </section>
+
+    <section class="card" id="checklist-section">
+      <h2>🧾 Packing / To-Do Checklist</h2>
+      <form id="checklist-form">
+        <input type="text" id="checklist-item" placeholder="e.g., Passport, Sunscreen..." required />
+        <button type="submit">Add Item</button>
+      </form>
+      <ul id="checklist"></ul>
+    </section>
+
+    <section class="card" id="explore">
+      <h2>🌍 Explore Map</h2>
+      <div id="map-frame"></div>
+
+      <h2>📸 Explore <span id="image-destination-name">Destination</span></h2>
+      <div class="image-gallery" id="destination-images"></div>
+    </section>
+
+    <section class="card tips">
+      <h2>💡 Travel Tips</h2>
+      <ul>
+        <li>Book flights and hotels early</li>
+        <li>Pack light and smart</li>
+        <li>Bring a universal power adapter</li>
+        <li>Learn basic local phrases</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 My Travel Diary. All Rights Reserved.</p>
+  </footer>
+
+  <script>
+    const form = document.getElementById('trip-form');
+    const summaryOutput = document.getElementById('summary-output');
+    const totalBudgetSpan = document.getElementById('total-budget');
+    const totalSpentSpan = document.getElementById('total-spent');
+    const remainingBudgetSpan = document.getElementById('budget-remaining');
+
+    let totalSpent = 0;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const destination = document.getElementById('destination').value;
+      const startDate = document.getElementById('start-date').value;
+      const endDate = document.getElementById('end-date').value;
+      const budget = parseFloat(document.getElementById('budget').value);
+
+      summaryOutput.innerHTML = `
+        <p><strong>Destination:</strong> ${destination}</p>
+        <p><strong>Dates:</strong> ${startDate} to ${endDate}</p>
+        <p><strong>Budget:</strong> ₹${budget}</p>
+      `;
+
+      totalBudgetSpan.textContent = budget;
+      remainingBudgetSpan.textContent = budget - totalSpent;
+
+      updateMap(destination);
+      fetchImages(destination);
+    });
+
+    document.getElementById('itinerary-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const day = document.getElementById('day-name').value;
+      const activity = document.getElementById('activity').value;
+      const list = document.getElementById('itinerary-list');
+
+      const li = document.createElement('li');
+      li.textContent = `${day}: ${activity}`;
+      list.appendChild(li);
+      this.reset();
+    });
+
+    document.getElementById('expense-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('expense-name').value;
+      const amount = parseFloat(document.getElementById('expense-amount').value);
+      const list = document.getElementById('expense-list');
+
+      totalSpent += amount;
+      const budget = parseFloat(document.getElementById('budget').value) || 0;
+
+      totalSpentSpan.textContent = totalSpent;
+      remainingBudgetSpan.textContent = budget - totalSpent;
+
+      const li = document.createElement('li');
+      li.textContent = `${name}: ₹${amount}`;
+      list.appendChild(li);
+
+      addExpenseToChart(name, amount);
+      this.reset();
+    });
+
+    document.getElementById('checklist-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const item = document.getElementById('checklist-item').value;
+      const list = document.getElementById('checklist');
+
+      const li = document.createElement('li');
+      li.textContent = item;
+      list.appendChild(li);
+      this.reset();
+    });
+
+    function updateMap(destination) {
+      const mapFrame = document.getElementById('map-frame');
+      mapFrame.innerHTML = "";
+
+      const map = L.map(mapFrame).setView([20, 0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const lat = data[0].lat;
+            const lon = data[0].lon;
+            map.setView([lat, lon], 12);
+            L.marker([lat, lon]).addTo(map).bindPopup(destination).openPopup();
+          } else {
+            alert("Location not found!");
+          }
+        })
+        .catch(error => console.error("Geocoding failed:", error));
+    }
+
+    let chart;
+    function addExpenseToChart(label, value) {
+      const ctx = document.getElementById('expense-chart').getContext('2d');
+
+      if (!chart) {
+        chart = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: [label],
+            datasets: [{
+              data: [value],
+              backgroundColor: ['#f94144', '#f3722c', '#f9844a', '#90be6d', '#43aa8b'],
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      } else {
+        chart.data.labels.push(label);
+        chart.data.datasets[0].data.push(value);
+        chart.update();
+      }
+    }
+
+    async function fetchImages(destination) {
+      const accessKey = "XDO-ExQdH5vG3HZLpBKyixBbRf1aChdMCFP9Jtl5on4"; // Replace with your own Unsplash key
+      const url = `https://api.unsplash.com/search/photos?query=${destination}&client_id=${accessKey}&per_page=6`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const gallery = document.getElementById("destination-images");
+        const destName = document.getElementById("image-destination-name");
+        gallery.innerHTML = "";
+        destName.textContent = destination;
+
+        data.results.forEach(photo => {
+          const img = document.createElement("img");
+          img.src = photo.urls.small;
+          img.alt = destination;
+          gallery.appendChild(img);
+        });
+      } catch (error) {
+        console.error("Failed to load images:", error);
+      }
+    }
+  </script>
+</body>
+</html>
+
